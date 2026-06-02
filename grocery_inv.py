@@ -107,7 +107,7 @@ if not df.empty:
     col2.metric("Inventory Coverage", f"{coverage:.1f} days")
     col3.metric("Near Expiry Risk", f"₹{near_expiry:,.0f}")
     col4.metric("Inventory Turnover", f"{turnover:.1f}x")
-    col5.metric("Stock Availability Ratio (Proxy)", f"{fill_rate:.1%}")
+    col5.metric("Stock Availability Ratio (Proxy)", f"{fill_rate:.0%}")
 
     # --- Insights ---
     st.markdown("---")
