@@ -182,16 +182,28 @@ if not df.empty:
         'Product_Margin': 'mean'
     }).reset_index()
 
-    fig = px.scatter(
-        cat,
-        x='Sales_Volume',
-        y='Inventory_Value',
-        size='Inventory_Value',
-        color='Product_Margin'
-    )
+   fig = px.scatter(
+    cat,
+    x='Sales_Volume',
+    y='Inventory_Value',
+    size='Inventory_Value',
+    color='Product_Margin',
+    hover_name='Catagory',  # 👈 THIS FIXES YOUR ISSUE
+    labels={
+        'Sales_Volume': 'Avg Sales Volume',
+        'Inventory_Value': 'Inventory Value',
+        'Product_Margin': 'Margin'
+    }
+)
 
-    st.plotly_chart(fig, use_container_width=True)
+fig.update_traces(
+    hovertemplate="<b>Category: %{hovertext}</b><br>" +
+                  "Inventory Value: ₹%{y:,.0f}<br>" +
+                  "Avg Sales Volume: %{x:,.0f}<br>" +
+                  "Margin: %{marker.color:.1%}<extra></extra>"
+)
 
+st.plotly_chart(fig, use_container_width=True)
     st.markdown("""
     **Insight:** High inventory & low sales = working capital blockage.
     """)
