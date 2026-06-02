@@ -141,6 +141,23 @@ if not df.empty:
 
         fig = px.pie(status_counts, values='Count', names='Status', hole=0.4)
         st.plotly_chart(fig, use_container_width=True)
+        st.markdown("---")
+st.subheader("💰 Working Capital Blockage Heatmap")
+
+fig = px.density_heatmap(
+    df,
+    x='Catagory',
+    y='Product_Name',
+    z='Inventory_Value',
+    color_continuous_scale='Reds',
+    title="Working Capital Blockage by Category & SKU",
+    hover_data={
+        'Product_Name': True,
+        'Inventory_Value': ':.0f'
+    }
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
     # Top Products
     with col2:
