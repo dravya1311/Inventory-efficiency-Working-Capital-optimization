@@ -98,13 +98,12 @@ if not df.empty:
    gmroii, coverage, near_expiry, turnover, risk_percent = calculate_kpis(df)
 
 st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
-
-    st.markdown("""
-    This dashboard identifies inventory inefficiencies, working capital blockage
-    and operational risks to support decision-making.
+ st.markdown("""
+This dashboard identifies inventory inefficiencies, working capital blockage
+and operational risks to support decision-making.
     """)
 
-    st.markdown("---")
+st.markdown("---")
 
     # KPI Row
     col1, col2, col3, col4, col5 = st.columns(5)
