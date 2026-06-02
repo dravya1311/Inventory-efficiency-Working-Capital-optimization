@@ -173,22 +173,22 @@ if not df.empty:
     )
 
     # --- Category Scatter ---
-    st.markdown("---")
-    st.subheader("Category Performance")
+st.markdown("---")
+st.subheader("Category Performance")
 
-    cat = df.groupby('Catagory').agg({
-        'Inventory_Value': 'sum',
-        'Sales_Volume': 'mean',
-        'Product_Margin': 'mean'
-    }).reset_index()
+cat = df.groupby('Catagory').agg({
+    'Inventory_Value': 'sum',
+    'Sales_Volume': 'mean',
+    'Product_Margin': 'mean'
+}).reset_index()
 
-   fig = px.scatter(
+fig = px.scatter(
     cat,
     x='Sales_Volume',
     y='Inventory_Value',
     size='Inventory_Value',
     color='Product_Margin',
-    hover_name='Catagory',  # 👈 THIS FIXES YOUR ISSUE
+    hover_name='Catagory',
     labels={
         'Sales_Volume': 'Avg Sales Volume',
         'Inventory_Value': 'Inventory Value',
@@ -204,9 +204,10 @@ fig.update_traces(
 )
 
 st.plotly_chart(fig, use_container_width=True)
-    st.markdown("""
-    **Insight:** High inventory & low sales = working capital blockage.
-    """)
+
+st.markdown("""
+**Insight:** High inventory & low sales = working capital blockage.
+""")
 
     # --- Dead Stock ---
     st.markdown("---")
