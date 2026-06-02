@@ -66,10 +66,10 @@ if not df.empty:
 
 
 # --- KPI Calculation ---
-def calculate_kpis(df):
+    def calculate_kpis(df):
     total_inventory_value = df['Inventory_Value'].sum()
-    total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
 
+    total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
     gmroii = total_sales_with_margin / total_inventory_value if total_inventory_value > 0 else 0
 
     total_stock = df['Stock_Quantity'].sum()
@@ -77,7 +77,7 @@ def calculate_kpis(df):
     coverage = total_stock / total_avg_daily_sales if total_avg_daily_sales > 0 else 0
 
     near_expiry = df[df['Days_to_Expire'] <= 7]['Inventory_Value'].sum()
-    
+
     risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
 
     avg_turnover = df['Inventory_Turnover_Rate'].mean()
@@ -89,13 +89,13 @@ def calculate_kpis(df):
     total_requested = df['Reorder_Quantity'].sum()
     fill_rate = total_received / total_requested if total_requested > 0 else 0
 
-    return gmroii, coverage, near_expiry, avg_turnover, fill_rate
+    return gmroii, coverage, near_expiry, avg_turnover, risk_percent
 
 
 # --- Dashboard ---
 if not df.empty:
 
-    gmroii, coverage, near_expiry, turnover, fill_rate = calculate_kpis(df)
+   gmroii, coverage, near_expiry, turnover, risk_percent = calculate_kpis(df)
 
     st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
 
