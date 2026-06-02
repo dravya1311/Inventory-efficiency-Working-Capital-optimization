@@ -35,8 +35,7 @@ def load_data(file_path, current_date):
     df['Total_Revenue'] = df['Sales_Volume'] * df['Unit_Price']
 
     # Dates
-    date_cols = ['Date_Received', 'Last_Order_Date', 'Expiration_Date']
-    for col in date_cols:
+    for col in ['Date_Received', 'Last_Order_Date', 'Expiration_Date']:
         df[col] = pd.to_datetime(df[col], errors='coerce')
 
     df['Days_to_Expire'] = (df['Expiration_Date'] - pd.Timestamp(current_date)).dt.days
@@ -45,7 +44,7 @@ def load_data(file_path, current_date):
     df['Catagory'] = df['Catagory'].fillna('Unknown')
 
     # 30-day proxy
-    df['Avg_Daily_Sales'] = df['Sales_Volume'] / 30  # Proxy assumption
+    df['Avg_Daily_Sales'] = df['Sales_Volume'] / 30
     df['Avg_Daily_Sales'] = df['Avg_Daily_Sales'].replace([0], 1)
 
     return df
@@ -138,35 +137,42 @@ if not df.empty:
     with col1:
         status_counts = df['Status'].value_counts().reset_index()
         status_counts.columns = ['Status', 'Count']
-
         fig = px.pie(status_counts, values='Count', names='Status', hole=0.4)
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown("---")
-st.subheader("💰 Working Capital Blockage Heatmap")
-
-fig = px.density_heatmap(
-    df,
-    x='Catagory',
-    y='Product_Name',
-    z='Inventory_Value',
-    color_continuous_scale='Reds',
-    title="Working Capital Blockage by Category & SKU",
-    hover_data={
-        'Product_Name': True,
-        'Inventory_Value': ':.0f'
-    }
-)
-
-st.plotly_chart(fig, use_container_width=True)
 
     # Top Products
     with col2:
         top_products = df.groupby('Product_Name')['Total_Revenue'].sum().nlargest(10).reset_index()
-
         fig = px.bar(top_products, x='Product_Name', y='Total_Revenue', color='Total_Revenue')
         st.plotly_chart(fig, use_container_width=True)
 
-    # Category Scatter
+    # --- Heatmap ---
+    st.markdown("---")
+    st.subheader("💰 Working Capital Blockage Heatmap")
+
+    fig = px.density_heatmap(
+        df,
+        x='Catagory',
+        y='Product_Name',
+        z='Inventory_Value',
+        color_continuous_scale='Reds',
+        title="Working Capital Blockage by Category & SKU",
+        hover_data={'Product_Name': True, 'Inventory_Value': ':.0f'}
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- Top Blocked Items ---
+    st.subheader("💰 Top 10 Cash Blocked Items")
+
+    top_blocked = df.sort_values(by='Inventory_Value', ascending=False).head(10)
+
+    st.dataframe(
+        top_blocked[['Product_Name', 'Catagory', 'Stock_Quantity', 'Inventory_Value']],
+        use_container_width=True
+    )
+
+    # --- Category Scatter ---
     st.markdown("---")
     st.subheader("Category Performance")
 
@@ -176,11 +182,13 @@ st.plotly_chart(fig, use_container_width=True)
         'Product_Margin': 'mean'
     }).reset_index()
 
-    fig = px.scatter(cat,
-                     x='Sales_Volume',
-                     y='Inventory_Value',
-                     size='Inventory_Value',
-                     color='Product_Margin')
+    fig = px.scatter(
+        cat,
+        x='Sales_Volume',
+        y='Inventory_Value',
+        size='Inventory_Value',
+        color='Product_Margin'
+    )
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -188,7 +196,7 @@ st.plotly_chart(fig, use_container_width=True)
     **Insight:** High inventory & low sales = working capital blockage.
     """)
 
-    # Dead Stock
+    # --- Dead Stock ---
     st.markdown("---")
     st.subheader("🚨 Dead / Slow Moving Inventory")
 
@@ -197,8 +205,10 @@ st.plotly_chart(fig, use_container_width=True)
         (df['Stock_Quantity'] > df['Stock_Quantity'].quantile(0.75))
     ]
 
-    st.dataframe(dead[['Product_Name', 'Catagory', 'Stock_Quantity', 'Sales_Volume', 'Inventory_Value']],
-                 use_container_width=True)
+    st.dataframe(
+        dead[['Product_Name', 'Catagory', 'Stock_Quantity', 'Sales_Volume', 'Inventory_Value']],
+        use_container_width=True
+    )
 
 else:
     st.warning("Dataset not loaded properly.")
