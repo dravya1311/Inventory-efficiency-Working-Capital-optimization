@@ -68,6 +68,7 @@ if not df.empty:
 # --- KPI Calculation ---
 def calculate_kpis(df):
     total_inventory_value = df['Inventory_Value'].sum()
+    risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
     total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
 
     gmroii = total_sales_with_margin / total_inventory_value if total_inventory_value > 0 else 0
