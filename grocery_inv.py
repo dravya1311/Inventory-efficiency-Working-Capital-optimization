@@ -95,7 +95,7 @@ if not df.empty:
     st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
 
     st.markdown("""
-    This dashboard identifies inventory inefficiencies, working capital blockage,
+    This dashboard identifies inventory inefficiencies, working capital blockage
     and operational risks to support decision-making.
     """)
 
