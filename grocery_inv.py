@@ -107,12 +107,13 @@ if not df.empty:
     st.markdown("---")
 
     # KPI Row
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric("Estimated GMROII", f"{gmroii:.2f}x")
     col2.metric("Inventory Coverage", f"{coverage:.1f} days")
     col3.metric("Near Expiry Risk", f"₹{near_expiry:,.0f}")
     col4.metric("Inventory Turnover", f"{turnover:.1f}x")
+    col5.metric("Inventory at Risk (%)", f"{risk_percent:.1f}%")
    
 
     # --- Insights ---
