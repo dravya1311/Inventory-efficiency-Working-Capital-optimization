@@ -43,7 +43,7 @@ def load_data(file_path, current_date):
     # Fill missing
     df['Catagory'] = df['Catagory'].fillna('Unknown')
 
-    # Avg daily sales (proxy)
+    # Avg daily sales proxy
     df['Avg_Daily_Sales'] = df['Sales_Volume'] / 30
     df['Avg_Daily_Sales'] = df['Avg_Daily_Sales'].replace([0], 1)
 
@@ -66,44 +66,38 @@ if not df.empty:
 
 
 # --- KPI Calculation ---
-    def calculate_kpis(df):
-        total_inventory_value = df['Inventory_Value'].sum()
+def calculate_kpis(df):
+    total_inventory_value = df['Inventory_Value'].sum()
 
-        total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
-        gmroii = total_sales_with_margin / total_inventory_value if total_inventory_value > 0 else 0
+    total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
+    gmroii = total_sales_with_margin / total_inventory_value if total_inventory_value > 0 else 0
 
-        total_stock = df['Stock_Quantity'].sum()
-        total_avg_daily_sales = df['Avg_Daily_Sales'].sum()
-        coverage = total_stock / total_avg_daily_sales if total_avg_daily_sales > 0 else 0
+    total_stock = df['Stock_Quantity'].sum()
+    total_avg_daily_sales = df['Avg_Daily_Sales'].sum()
+    coverage = total_stock / total_avg_daily_sales if total_avg_daily_sales > 0 else 0
 
-        near_expiry = df[df['Days_to_Expire'] <= 7]['Inventory_Value'].sum()
+    near_expiry = df[df['Days_to_Expire'] <= 7]['Inventory_Value'].sum()
 
-        risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
+    risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
 
-        avg_turnover = df['Inventory_Turnover_Rate'].mean()
+    avg_turnover = df['Inventory_Turnover_Rate'].mean()
 
-        return gmroii, coverage, near_expiry, avg_turnover, risk_percent
-        avg_turnover = df['Inventory_Turnover_Rate'].mean()
-
-        total_received = df['Stock_Quantity'].sum()
-        total_requested = df['Reorder_Quantity'].sum()
-        fill_rate = total_received / total_requested if total_requested > 0 else 0
-
-        return gmroii, coverage, near_expiry, avg_turnover, risk_percent
+    return gmroii, coverage, near_expiry, avg_turnover, risk_percent
 
 
 # --- Dashboard ---
 if not df.empty:
 
-   gmroii, coverage, near_expiry, turnover, risk_percent = calculate_kpis(df)
+    gmroii, coverage, near_expiry, turnover, risk_percent = calculate_kpis(df)
 
-st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
- st.markdown("""
-This dashboard identifies inventory inefficiencies, working capital blockage
-and operational risks to support decision-making.
+    st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
+
+    st.markdown("""
+    This dashboard identifies inventory inefficiencies, working capital blockage
+    and operational risks to support decision-making.
     """)
 
-st.markdown("---")
+    st.markdown("---")
 
     # KPI Row
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -113,7 +107,6 @@ st.markdown("---")
     col3.metric("Near Expiry Risk", f"₹{near_expiry:,.0f}")
     col4.metric("Inventory Turnover", f"{turnover:.1f}x")
     col5.metric("Inventory at Risk (%)", f"{risk_percent:.1f}%")
-   
 
     # --- Insights ---
     st.markdown("---")
@@ -201,9 +194,7 @@ st.markdown("---")
 
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("""
-    **Insight:** High inventory & low sales = working capital blockage.
-    """)
+    st.markdown("**Insight:** High inventory & low sales = working capital blockage.")
 
     # --- Dead Inventory ---
     st.markdown("---")
