@@ -68,7 +68,6 @@ if not df.empty:
 # --- KPI Calculation ---
 def calculate_kpis(df):
     total_inventory_value = df['Inventory_Value'].sum()
-    risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
     total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
 
     gmroii = total_sales_with_margin / total_inventory_value if total_inventory_value > 0 else 0
@@ -78,6 +77,12 @@ def calculate_kpis(df):
     coverage = total_stock / total_avg_daily_sales if total_avg_daily_sales > 0 else 0
 
     near_expiry = df[df['Days_to_Expire'] <= 7]['Inventory_Value'].sum()
+    
+    risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
+
+    avg_turnover = df['Inventory_Turnover_Rate'].mean()
+
+    return gmroii, coverage, near_expiry, avg_turnover, risk_percent
     avg_turnover = df['Inventory_Turnover_Rate'].mean()
 
     total_received = df['Stock_Quantity'].sum()
