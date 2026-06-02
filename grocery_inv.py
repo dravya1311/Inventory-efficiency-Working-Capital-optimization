@@ -168,7 +168,7 @@ if not df.empty:
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("""
-    **Insight:** High inventory + low sales = working capital blockage.
+    **Insight:** High inventory & low sales = working capital blockage.
     """)
 
     # Dead Stock
