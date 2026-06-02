@@ -101,7 +101,7 @@ if not df.empty:
     st.markdown("---")
 
     # KPI Row
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
 
     col1.metric("Estimated GMROII", f"{gmroii:.2f}x")
     col2.metric("Inventory Coverage", f"{coverage:.1f} days")
