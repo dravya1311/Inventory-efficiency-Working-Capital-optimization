@@ -94,7 +94,7 @@ if not df.empty:
 
     st.markdown("""
     This dashboard identifies inventory inefficiencies, working capital blockage
-    and operational risks to support decision-making.
+    and operational risks to support decision-making.Data shared here is for reference purpose only.
     """)
 
     st.markdown("---")
