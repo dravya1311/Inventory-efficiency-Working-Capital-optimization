@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import date 
+from datetime import date
 
 # --- Configuration ---
 st.set_page_config(layout="wide", page_title="Inventory Efficiency Dashboard")
@@ -43,7 +43,7 @@ def load_data(file_path, current_date):
     # Fill missing
     df['Catagory'] = df['Catagory'].fillna('Unknown')
 
-    # 30-day proxy
+    # Avg daily sales (proxy)
     df['Avg_Daily_Sales'] = df['Sales_Volume'] / 30
     df['Avg_Daily_Sales'] = df['Avg_Daily_Sales'].replace([0], 1)
 
@@ -77,7 +77,6 @@ def calculate_kpis(df):
     coverage = total_stock / total_avg_daily_sales if total_avg_daily_sales > 0 else 0
 
     near_expiry = df[df['Days_to_Expire'] <= 7]['Inventory_Value'].sum()
-
     avg_turnover = df['Inventory_Turnover_Rate'].mean()
 
     total_received = df['Stock_Quantity'].sum()
@@ -89,6 +88,7 @@ def calculate_kpis(df):
 
 # --- Dashboard ---
 if not df.empty:
+
     gmroii, coverage, near_expiry, turnover, fill_rate = calculate_kpis(df)
 
     st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
@@ -109,7 +109,7 @@ if not df.empty:
     col4.metric("Inventory Turnover", f"{turnover:.1f}x")
     col5.metric("Stock Availability Ratio (Proxy)", f"{fill_rate:.1%}")
 
-    # --- Decision Layer ---
+    # --- Insights ---
     st.markdown("---")
     st.subheader("📌 Key Business Insights & Actions")
 
@@ -133,14 +133,12 @@ if not df.empty:
 
     col1, col2 = st.columns(2)
 
-    # Status Pie
     with col1:
         status_counts = df['Status'].value_counts().reset_index()
         status_counts.columns = ['Status', 'Count']
         fig = px.pie(status_counts, values='Count', names='Status', hole=0.4)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Top Products
     with col2:
         top_products = df.groupby('Product_Name')['Total_Revenue'].sum().nlargest(10).reset_index()
         fig = px.bar(top_products, x='Product_Name', y='Total_Revenue', color='Total_Revenue')
@@ -156,60 +154,52 @@ if not df.empty:
         y='Product_Name',
         z='Inventory_Value',
         color_continuous_scale='Reds',
-        title="Working Capital Blockage by Category & SKU",
         hover_data={'Product_Name': True, 'Inventory_Value': ':.0f'}
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
     # --- Top Blocked Items ---
     st.subheader("💰 Top 10 Cash Blocked Items")
 
     top_blocked = df.sort_values(by='Inventory_Value', ascending=False).head(10)
-
     st.dataframe(
         top_blocked[['Product_Name', 'Catagory', 'Stock_Quantity', 'Inventory_Value']],
         use_container_width=True
     )
 
     # --- Category Scatter ---
-st.markdown("---")
-st.subheader("Category Performance")
+    st.markdown("---")
+    st.subheader("Category Performance")
 
-cat = df.groupby('Catagory').agg({
-    'Inventory_Value': 'sum',
-    'Sales_Volume': 'mean',
-    'Product_Margin': 'mean'
-}).reset_index()
+    cat = df.groupby('Catagory').agg({
+        'Inventory_Value': 'sum',
+        'Sales_Volume': 'mean',
+        'Product_Margin': 'mean'
+    }).reset_index()
 
-fig = px.scatter(
-    cat,
-    x='Sales_Volume',
-    y='Inventory_Value',
-    size='Inventory_Value',
-    color='Product_Margin',
-    hover_name='Catagory',
-    labels={
-        'Sales_Volume': 'Avg Sales Volume',
-        'Inventory_Value': 'Inventory Value',
-        'Product_Margin': 'Margin'
-    }
-)
+    fig = px.scatter(
+        cat,
+        x='Sales_Volume',
+        y='Inventory_Value',
+        size='Inventory_Value',
+        color='Product_Margin',
+        hover_name='Catagory'
+    )
 
-fig.update_traces(
-    hovertemplate="<b>Category: %{hovertext}</b><br>" +
-                  "Inventory Value: ₹%{y:,.0f}<br>" +
-                  "Avg Sales Volume: %{x:,.0f}<br>" +
-                  "Margin: %{marker.color:.1%}<extra></extra>"
-)
+    fig.update_traces(
+        hovertemplate="<b>Category: %{hovertext}</b><br>" +
+                      "Inventory Value: ₹%{y:,.0f}<br>" +
+                      "Avg Sales Volume: %{x:,.0f}<br>" +
+                      "Margin: %{marker.color:.1%}<extra></extra>"
+    )
 
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("""
-**Insight:** High inventory & low sales = working capital blockage.
-""")
+    st.markdown("""
+    **Insight:** High inventory & low sales = working capital blockage.
+    """)
 
-    # --- Dead Stock ---
+    # --- Dead Inventory ---
     st.markdown("---")
     st.subheader("🚨 Dead / Slow Moving Inventory")
 
