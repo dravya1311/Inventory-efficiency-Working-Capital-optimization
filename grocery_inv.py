@@ -202,13 +202,13 @@ if not df.empty:
 
     if not df.empty:
 
-    st.dataframe(
+        st.dataframe(
         dead[['Product_Name', 'Catagory', 'Stock_Quantity', 'Sales_Volume', 'Inventory_Value']],
         use_container_width=True
     )
 
-    st.markdown("---")
-    st.caption("Developed by R Yadav")
+        st.markdown("---")
+        st.caption("Developed by R Yadav")
 
 else:
     st.warning("Dataset not loaded properly.")
