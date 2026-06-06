@@ -3,12 +3,11 @@ import pandas as pd
 import plotly.express as px
 from datetime import date
 
-# --- Configuration ---
+# --- CONFIG ---
 st.set_page_config(layout="wide", page_title="Inventory Efficiency Dashboard")
-
 TODAY = date.today()
 
-# --- Data Loading ---
+# --- LOAD DATA ---
 @st.cache_data
 def load_data(file_path, current_date):
     try:
@@ -17,11 +16,13 @@ def load_data(file_path, current_date):
         st.error("File not found. Please check path.")
         return pd.DataFrame()
 
+    # Clean column names
     df.columns = df.columns.str.strip()
 
-    # Clean price
-    df['Unit_Price'] = df['Unit_Price'].astype(str).str.replace('$', '', regex=False)
-    df['Unit_Price'] = pd.to_numeric(df['Unit_Price'], errors='coerce')
+    # --- Data Cleaning ---
+    if 'Unit_Price' in df.columns:
+        df['Unit_Price'] = df['Unit_Price'].astype(str).str.replace('$', '', regex=False)
+        df['Unit_Price'] = pd.to_numeric(df['Unit_Price'], errors='coerce')
 
     # Margin
     if 'percentage' in df.columns:
@@ -30,25 +31,28 @@ def load_data(file_path, current_date):
     else:
         df['Product_Margin'] = 0.0
 
-    # Derived metrics
-    df['Inventory_Value'] = df['Stock_Quantity'] * df['Unit_Price']
-    df['Total_Revenue'] = df['Sales_Volume'] * df['Unit_Price']
+    # Derived Metrics
+    df['Inventory_Value'] = df.get('Stock_Quantity', 0) * df.get('Unit_Price', 0)
+    df['Total_Revenue'] = df.get('Sales_Volume', 0) * df.get('Unit_Price', 0)
 
     # Dates
     for col in ['Date_Received', 'Last_Order_Date', 'Expiration_Date']:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors='coerce')
 
-    df['Days_to_Expire'] = (df['Expiration_Date'] - pd.Timestamp(current_date)).dt.days
+    if 'Expiration_Date' in df.columns:
+        df['Days_to_Expire'] = (df['Expiration_Date'] - pd.Timestamp(current_date)).dt.days
+    else:
+        df['Days_to_Expire'] = 999
 
-    # Fix column name issue safely
+    # Fix Category spelling safely
     if 'Catagory' in df.columns:
         df['Catagory'] = df['Catagory'].fillna('Unknown')
     else:
         df['Catagory'] = 'Unknown'
 
-    # Avg daily sales
-    df['Avg_Daily_Sales'] = df['Sales_Volume'] / 30
+    # Avg daily sales (safe)
+    df['Avg_Daily_Sales'] = df.get('Sales_Volume', 0) / 30
     df['Avg_Daily_Sales'] = df['Avg_Daily_Sales'].replace(0, 1)
 
     return df
@@ -56,49 +60,52 @@ def load_data(file_path, current_date):
 
 df = load_data('Grocery_Inventory.csv', TODAY)
 
-# --- Filters ---
+# --- FILTERS ---
 if not df.empty:
 
     st.sidebar.header("🔍 Filters")
 
-    category_filter = st.sidebar.multiselect("Category", df['Catagory'].unique())
-    supplier_filter = st.sidebar.multiselect("Supplier", df['Supplier_Name'].unique())
+    if 'Catagory' in df.columns:
+        category_filter = st.sidebar.multiselect("Category", df['Catagory'].unique())
+        if category_filter:
+            df = df[df['Catagory'].isin(category_filter)]
 
-    if category_filter:
-        df = df[df['Catagory'].isin(category_filter)]
-    if supplier_filter:
-        df = df[df['Supplier_Name'].isin(supplier_filter)]
+    if 'Supplier_Name' in df.columns:
+        supplier_filter = st.sidebar.multiselect("Supplier", df['Supplier_Name'].unique())
+        if supplier_filter:
+            df = df[df['Supplier_Name'].isin(supplier_filter)]
 
-    # --- KPI Calculation ---
+    # --- KPI FUNCTION ---
     def calculate_kpis(df):
         total_inventory_value = df['Inventory_Value'].sum()
 
         total_sales_with_margin = (df['Total_Revenue'] * df['Product_Margin']).sum()
         gmroii = total_sales_with_margin / total_inventory_value if total_inventory_value > 0 else 0
 
-        total_stock = df['Stock_Quantity'].sum()
+        total_stock = df.get('Stock_Quantity', 0).sum()
         total_avg_daily_sales = df['Avg_Daily_Sales'].sum()
         coverage = total_stock / total_avg_daily_sales if total_avg_daily_sales > 0 else 0
 
         near_expiry = df[df['Days_to_Expire'] <= 7]['Inventory_Value'].sum()
         risk_percent = (near_expiry / total_inventory_value) * 100 if total_inventory_value > 0 else 0
 
-        turnover = df['Inventory_Turnover_Rate'].mean() if 'Inventory_Turnover_Rate' in df.columns else 0
+        turnover = df.get('Inventory_Turnover_Rate', pd.Series([0])).mean()
 
         return gmroii, coverage, near_expiry, turnover, risk_percent
 
     gmroii, coverage, near_expiry, turnover, risk_percent = calculate_kpis(df)
 
-    # --- Dashboard ---
+    # --- HEADER ---
     st.title("📈 Inventory Efficiency & Working Capital Optimization Dashboard")
 
     st.markdown("""
-    This dashboard identifies inventory inefficiencies, working capital blockage
+    This dashboard identifies inventory inefficiencies, working capital blockage,
     and operational risks to support decision-making.
     """)
 
     st.markdown("---")
 
+    # --- KPI DISPLAY ---
     col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric("Estimated GMROII", f"{gmroii:.2f}x")
@@ -107,9 +114,42 @@ if not df.empty:
     col4.metric("Inventory Turnover", f"{turnover:.1f}x")
     col5.metric("Inventory at Risk (%)", f"{risk_percent:.1f}%")
 
-    # --- Dead Inventory ---
+    # --- INSIGHTS ---
     st.markdown("---")
-    st.subheader("🚨 Dead / Slow Moving Inventory")
+    st.subheader("📌 Key Insights")
+
+    category_perf = df.groupby('Catagory').agg({
+        'Inventory_Value': 'sum',
+        'Sales_Volume': 'sum'
+    }).reset_index()
+
+    category_perf['Inv_to_Sales'] = category_perf['Inventory_Value'] / category_perf['Sales_Volume'].replace(0, 1)
+    problem_categories = category_perf.sort_values('Inv_to_Sales', ascending=False).head(3)
+
+    st.write(f"""
+    - ₹{near_expiry:,.0f} inventory at risk → Immediate action required  
+    - Inventory coverage: {coverage:.1f} days  
+    - Problem categories: {', '.join(problem_categories['Catagory'])}
+    """)
+
+    # --- CHARTS ---
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+
+    if 'Status' in df.columns:
+        with col1:
+            fig = px.pie(df, names='Status')
+            st.plotly_chart(fig, use_container_width=True)
+
+    if 'Product_Name' in df.columns:
+        with col2:
+            top_products = df.groupby('Product_Name')['Total_Revenue'].sum().nlargest(10).reset_index()
+            fig = px.bar(top_products, x='Product_Name', y='Total_Revenue')
+            st.plotly_chart(fig, use_container_width=True)
+
+    # --- DEAD INVENTORY ---
+    st.markdown("---")
+    st.subheader("🚨 Dead Inventory")
 
     dead = df[
         (df['Sales_Volume'] < df['Sales_Volume'].quantile(0.25)) &
@@ -124,13 +164,9 @@ if not df.empty:
     else:
         st.info("No dead inventory found")
 
-    # --- Footer ---
+    # --- FOOTER ---
     st.markdown("---")
     st.caption("Developed by R Yadav")
 
 else:
     st.warning("Dataset not loaded properly.")
-
-
-
-   
